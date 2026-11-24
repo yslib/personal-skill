@@ -1,4 +1,4 @@
-# 个人默认值（草稿）。只在用户明确要求保存偏好时改动。
+# Personal defaults (draft). Update only when the user asks to save a preference.
 targets: [rust, cpp]
 questions: auto
 naming:

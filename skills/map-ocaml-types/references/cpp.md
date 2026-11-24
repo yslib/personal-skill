@@ -1,38 +1,38 @@
-# C++ 对象、转换与标准特性
+# C++ objects, casts, and language features
 
-## 对接 kuai
+## Integrate with kuai
 
-以下路径来自 `yslib/kuai` 的 `2b883e6`，用于辨认项目约定。在不同分支工作时以当前源码为准。
+These source links refer to `yslib/kuai` at `2b883e6`. Check the corresponding files on the target branch before generating code.
 
-| 去哪里看 | 生成代码该复用什么 |
+| Source | Conventions to reuse |
 | --- | --- |
-| [KuRtti.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuRtti.h) | `KuRtti<Kind>` 持 kind。`KU_RTTI_LEAF` 精确相等，`KU_RTTI_RANGE` 判 `begin < kind && kind < end`。traits 校验 descriptor 自报的 object_type 与目标类型相同，防止继承到父类注册。`as<T>()` 校验注册、域与继承关系，保留 const，运行时不匹配给空指针。`ku_isa<T>(ptr)` 处理空指针。 |
-| [KuObjectDefs.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuObjectDefs.h)、[KuObject.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuObject.h) | `KuObjectKind` 是带域的强类型整数 `KuRttiKind<KuObjectKindTag>`；sections / items 展开 kind 常量、分组界限和字符串。库内叶子、用户预留区及界限值各有用途。已有编号必须保留。`KuObject` 自身注册为 `KU_UNKNOWN` 的 leaf；叶子到根直接向上转型。 |
-| [KuDeviceData.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuDeviceData.h)、[KuTensor.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuTensor.h) | `KuTensor` 在构造时把 `kTensor` 传给 `KuDeviceData`；两者分别注册 leaf / range。同一个具体对象可查询叶子和中间类。 |
-| [KuPointer.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuPointer.h)、[KuRefCounted.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuRefCounted.h) | `KuObject` 同时继承 RTTI 与引用计数。实际采用侵入持有时复用 `ku_sp<T>` / `ku_make_sp<T>`；`as<T>()` 得到借用，不改变 refcount。retain、adopt、借用在跨边界时分清。 |
-| [KuDebug.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuDebug.h) | `KU_ASSERT` 在 NDEBUG 下跳过求值；`KU_VERIFY` 始终求值，release 不保证检查结果；`KU_UNREACHABLE` 自身触发失败。`cast<T>()` 仅有静态继承检查，生成调用点时先用支配该路径的 kind 证明。 |
-| [ku_object.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/kuai_c/include/kuai/kuai_c/ku_object.h)、[ku_object.rs](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/crates/kurt/src/ku_object.rs) | 公开 C kind 有自己的协议。例如 `KU_OBJECT_TENSOR` 为 2，内部 `kTensor` 为 1001。Rust 的安全包装和 sys 分层，读取外部 raw tag 后显式匹配。只在用户要求跨语言互操作时生成适配层。 |
-| [KurtBuildOptions.cmake](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/cmake/KurtBuildOptions.cmake) | 此版本的 MSVC 分支设置 C++23，其他分支设置 C++26。编译选项与实际可用特性分别确认。 |
+| [KuRtti.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuRtti.h) | `KuRtti<Kind>` stores the kind. `KU_RTTI_LEAF` tests equality. `KU_RTTI_RANGE` tests `begin < kind && kind < end`. The traits check the descriptor's `object_type` against the target to prevent a derived class from inheriting its parent's registration. `as<T>()` checks registration, domain, and inheritance, propagates const, and returns null on a runtime mismatch. `ku_isa<T>(ptr)` handles null. |
+| [KuObjectDefs.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuObjectDefs.h), [KuObject.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuObject.h) | `KuObjectKind` is a domain-specific strong integer, `KuRttiKind<KuObjectKindTag>`. Section and item tables generate kind constants, range boundaries, and strings. Preserve assigned numbers and distinguish built-in leaves, user ranges, and boundary sentinels. `KuObject` registers itself as the `KU_UNKNOWN` leaf. Use an ordinary upcast from a leaf to the root. |
+| [KuDeviceData.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuDeviceData.h), [KuTensor.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuTensor.h) | `KuTensor` passes `kTensor` to `KuDeviceData` during construction. The leaf and intermediate class register an exact kind and a range, respectively. The same object can be queried as either type. |
+| [KuPointer.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuPointer.h), [KuRefCounted.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuRefCounted.h) | `KuObject` inherits both RTTI and reference counting. For intrusive ownership, reuse `ku_sp<T>` and `ku_make_sp<T>`. An `as<T>()` result borrows the object and leaves the reference count intact. Distinguish retain, adopt, and borrow at ownership boundaries. |
+| [KuDebug.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/core/include/kuai/core/KuDebug.h) | `KU_ASSERT` skips evaluation under `NDEBUG`. `KU_VERIFY` always evaluates its expression, but release builds may discard the result. `KU_UNREACHABLE` triggers a failure. The `cast<T>()` defined in `KuRtti.h` checks inheritance statically. Use it where a dominating kind check already proves the dynamic type. |
+| [ku_object.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/kuai_c/include/kuai/kuai_c/ku_object.h), [ku_object.rs](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/crates/kurt/src/ku_object.rs) | Public C kind numbers have a separate protocol. For example, `KU_OBJECT_TENSOR` is 2 and the internal `kTensor` is 1001. The safe Rust wrapper sits above the sys layer and explicitly matches raw external tags. Generate an adapter when the user requests cross-language interoperation. |
+| [KurtBuildOptions.cmake](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/cmake/KurtBuildOptions.cmake) | This revision sets C++23 for MSVC and C++26 for the other branch. Check the target flags and probe individual features. |
 
-## 独立封闭 ADT 的生成规则
+## Generate a standalone closed ADT
 
-1. 定义本域 `enum class ExprKind`，一个构造器对应一项。让 `Rtti<ExprKind>` 存唯一的 kind，业务根 `Expr` 和叶子不再存判别字段。普通 `record`、纯枚举和标量包装走值表示。用户请求跨模块稳定编号时再指定固定宽度、显式值和边界验证。
-2. 从一张 X-macro 列表生成 kind、type-to-kind 注册、名称或 visitor 的机械分支。在宏外手写字段、不变量和业务动作。使用带域前缀的宏名，用完 `#undef`；测试增加一项时哪些编译点必须更新。分派表达式使用穷尽 switch，未知外部整数在解码处返回错误。内部不可达尾部使用项目失败路径。
-3. 封闭域只允许已知叶子构造根，不让外界提供任意 kind。禁用基类公开复制/赋值以保护 kind 与动态类型的一致性、避免切片。向上转型用普通语言规则。`as<T>()` 返回可空借用，const 传播，错误类型或跨域目标在编译期拒绝。需要 `cast<T>()` 时写明其前置条件；独立实现可对内部不变量做 debug 断言。对公共输入的校验要在 release 下也执行。
-4. 给泛型族 `'a expr` 单独设计域身份。例如用 `ExprKindTag<T>` 标识实例化域，或在 `Expr<T>` 上把可查询的类型限制为同一个 `T`。仅检查一个 `Lit` tag 不足以把 `Lit<int>` 解释成 `Lit<double>`。运行时选择 payload 类型时使用明确的二级 tag 或受控类型擦除。
-5. RTTI 基础设施只负责分类。叶子通常 `final`。通过 `unique_ptr<Expr>` 删除时根有虚析构；arena 擦除对象时明确由谁执行非平凡析构。多态调用只在业务确实需要时添加。强类型 ID 的 arena 可以持有 `unique_ptr<Expr>` 或项目节点池，边只存 ID。仅需稳定 ID 时避免许诺引用地址稳定。
-6. 保持 `const` / `[[nodiscard]]`，只给保证不抛的 API 标 `noexcept`。构造路径确立内部非空边，一般使用只读访问器；对于 `mutable` 保留源程序可观察的更新。内建算术、比较、clone 与遍历仅按目标语义生成。
+1. Define a domain-specific `enum class ExprKind` with one entry per constructor. Store the discriminator once in `Rtti<ExprKind>`. Let the root `Expr` and its leaves use the inherited tag. Use value representations for plain records, payload-free enums, and scalar wrappers. Add a fixed underlying width, explicit numbers, and boundary validation when an inter-module protocol needs stable numbers.
+2. Generate mechanical kind declarations, type-to-kind registrations, names, or visitor arms from one X-macro list. Write fields, invariants, and domain behavior in ordinary C++. Give macros a domain prefix and `#undef` them after use. Check which callers must change when a list entry is added. Dispatch with an exhaustive switch. Reject unknown external integers at decode time and use the project's failure path for an unreachable internal tail.
+3. Restrict root construction to the registered leaves so that callers cannot forge a kind. Disable public base copying and assignment to prevent slicing and preserve the agreement between tag and dynamic type. Use ordinary upcasts. Make `as<T>()` a const-preserving, nullable borrow. Reject unregistered and cross-domain targets at compile time. Document the precondition of `cast<T>()` and consider a debug assertion for internal proofs. Validate public inputs in release builds as well.
+4. Give a generic family such as `'a expr` a domain identity for each instantiation. For example, use `ExprKindTag<T>` or restrict queries on `Expr<T>` to leaves with the same `T`. A `Lit` tag alone cannot justify converting `Lit<int>` to `Lit<double>`. For dynamically selected payload types, use a second discriminator or controlled type erasure.
+5. Use RTTI for classification. Mark leaves `final` by default. A root deleted through `unique_ptr<Expr>` needs a virtual destructor. For arena-owned nodes, identify who runs nontrivial destructors. Add virtual business operations only when needed. An arena with strong IDs can own `unique_ptr<Expr>` or use the project's node pool, with edges storing IDs. Specify stable addresses only when the storage provides them.
+6. Preserve `const` and `[[nodiscard]]`. Use `noexcept` only for operations guaranteed not to throw. Establish non-null edges during construction and prefer read-only accessors for immutable payloads. Preserve observable mutations for `mutable` fields. Generate arithmetic, comparisons, cloning, and traversal as the target semantics require.
 
-## C++26 的具体落点
+## Select C++ features
 
-| 场景 | 优先实现与可验证回落 |
+| Use case | Implementation and fallback |
 | --- | --- |
-| 检查已证明的内部转换 | 项目有断言宏时沿用。显式选用契约且 `__cpp_contracts >= 202502L`、构建已启用该策略时，可写 `contract_assert(p != nullptr);`。只放无副作用谓词。契约有 ignore/observe 等模式；必须拒绝的外部值走显式分支。 |
-| 穷举已声明的 enum 项 | 在支持 `<meta>` 和 `__cpp_impl_reflection` 的工具链，可在 `consteval` 内用 `std::meta::enumerators_of(^^ExprKind)` 校验枚举元数据。下面的最小探针无需 expansion statements。稳定 wire 名称、叶子类对应关系、号段等业务数据仍以表为准。 |
-| const 与非 const 的访问器 | C++23 的显式对象形参 `this Self&` 可合并实现，并限制临时对象借用；若需要兼容 C++20，使用 `&`/`const &` 重载并删除从右值借用的重载。`std::expected` 同样属于 C++23。 |
-| 选择可用实现 | 在相同 flags、标准库及编译前端（含 CUDA 经过的 host/device 路径）做小型编译探针。探针成功才编译含新语法的路径，回落保持相同 API、失败语义和 ABI。 |
+| Check an internal downcast precondition | Reuse the project's assertion helper. When contracts are requested, the build enables them, and `__cpp_contracts >= 202502L`, use `contract_assert(p != nullptr);`. Keep predicates free of side effects. Contract modes include ignore and observe. Use explicit control flow to reject invalid external input. |
+| Enumerate declared enum values | With `<meta>` and `__cpp_impl_reflection`, use `std::meta::enumerators_of(^^ExprKind)` in a constant-evaluation context to verify enum metadata. The probe below works without expansion statements. Keep stable wire names, kind-to-leaf mappings, and assigned ranges in the domain table. |
+| Share const and mutable accessor implementations | A C++23 explicit object parameter, `this Self&`, can share the implementation and restrict borrows from temporaries. For C++20, provide `&` and `const &` overloads and delete rvalue borrowing overloads. `std::expected` also belongs to C++23. |
+| Choose a supported implementation | Compile a small feature probe using the target flags, standard library, and front end, including relevant CUDA host and device passes. Compile the new syntax only on a verified path. Preserve the API, failure semantics, and ABI on the fallback path. |
 
-可选反射探针（针对独立、封闭、无别名枚举）：
+The following reflection example assumes a standalone, closed enum with no aliases.
 
 ```cpp
 #if defined(__cpp_impl_reflection) && __cpp_impl_reflection >= 202603L && __has_include(<meta>)
@@ -42,4 +42,4 @@ static_assert(std::meta::enumerators_of(^^ProbeKind).size() == 2);
 #endif
 ```
 
-实际探测能力时让未满足 `#if` 的分支 `#error`，防止“跳过后编译成功”被当成特性可用。工程中的兼容头才使用回落。参阅 [契约求值](https://eel.is/c++draft/basic.contract.eval) 和 [静态反射查询](https://eel.is/c++draft/meta.reflection.member.queries)。
+In a build-time feature probe, add an `#else` with `#error` so that skipping the test body cannot count as success. In a compatibility header, use the fallback in that branch. See [contract evaluation](https://eel.is/c++draft/basic.contract.eval) and [reflection queries](https://eel.is/c++draft/meta.reflection.member.queries).

@@ -1,6 +1,6 @@
 # Personal skills
 
-I keep one reusable coding task per directory under [skills/](skills/). Each skill has a `SKILL.md` entry point and keeps its mapping rules, defaults, and examples alongside it.
+I keep one reusable coding task per directory under [skills/](skills/). I write skill instructions, references, metadata, and examples in English. Each skill has a `SKILL.md` entry point and keeps its mapping rules, defaults, and examples alongside it.
 
 ## Skill index
 

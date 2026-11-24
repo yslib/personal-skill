@@ -1,30 +1,30 @@
 ---
 name: map-ocaml-types
-description: 把 OCaml 的 type、and、record 和 variant 原型映射成 Rust、C++ 或双端工程类型，也用于根据已有类型更新生成结果，以及维护 Lucida 的类型映射偏好。适用于 AST、IR、运行时对象和普通数据模型，尤其是需要 Rust enum、C++ tag-based RTTI、as 转换、kind 表和可选命名约定的代码生成请求。
+description: Map OCaml type declarations, records, variants, and mutually recursive groups to Rust or C++, update existing mappings, and maintain Lucida's representation preferences. Use for ASTs, IRs, runtime objects, and data models that need Rust enums or C++ kind tables, tag-based RTTI, and checked downcasts with configurable naming and ownership.
 ---
 
-# 从 OCaml 原型生成工程类型
+# Map OCaml types to Rust and C++
 
-把 OCaml 声明视为数据语义，把目标项目视为 API、布局和所有权的约束。先弄清一个值如何构造、由谁拥有、调用方怎样读取它，再落代码。向用户使用其工作语言，保留代码里的项目命名。
+Use the OCaml declarations to determine which values exist and how they behave. Use the target project to determine API conventions, layout, and ownership. Before generating code, identify how a caller constructs a value, who owns it, and how another caller inspects it. Respond in the user's working language and keep project identifiers in their original spelling.
 
-## 读取参数
+## Resolve options
 
-1. 读取 [个人默认值](assets/defaults.yaml) 和 [参数与命名档案](references/options.md)。接受自然语言、简短键值或 YAML。只对本次指定的维度做覆盖，保留其余默认值。
-2. 读目标模块相邻的类型声明、消费点、构建配置和断言设施。按仓库模式生成时直接复用已有类型和工具。新建独立示例时使用下文的内置档案。
-3. 根据 `questions` 决定是否询问。命名尚未确定时，展示同一构造器和访问表达式的两种拼写，请用户选一组或只改其中一项。不要逐个字段提问。用户说“先生成草稿”时，用已知偏好继续并点明暂定项。
-4. 只在用户明确表示“以后默认”“记到 skill”时更新对应默认值或规则。一次任务的命名选择留在该次生成里。
+1. Read the [personal defaults](assets/defaults.yaml) and [option and naming profiles](references/options.md). Accept natural language, key-value pairs, or YAML. A per-task override changes only the settings it specifies.
+2. Inspect nearby type declarations, call sites, build options, and assertion helpers. Reuse existing types and utilities in a project. For a standalone example, select the applicable built-in profile.
+3. Follow the `questions` setting. When naming is undecided, show two spellings of the same constructor and access expression so the user can pick a profile or change one part. When asked for a draft, proceed with known preferences and identify provisional choices.
+4. Change a stored preference only when the user asks to make it a default or save it in the skill.
 
-## 执行映射
+## Generate the mapping
 
-1. 逐个记录类型名、类型参数、构造器、payload 的个数和分组、字段名/顺序与可变性。结合 `.mli` 的可见性和使用示例识别共享、物理相等、编码和 ABI。对互递归组找出会导致无限大小的按值环，已存在的容器或指针间接层也计入。
-2. 按 [语义映射表](references/mapping.md) 选择表示。Rust 优先普通 `enum` / `struct` 与穷尽 `match`。C++ 对带载荷的封闭和类型使用基础 RTTI + kind + 具体类，对纯枚举和记录生成轻量值类型。仅生成用户要的目标。
-3. 为 C++ 读 [对象组织与 C++26](references/cpp.md)。目标是 kuai 时核对当前分支和现成基础设施；独立项目取该设计的最小可用子集。现有代码风格的源文件路径和设计差异见该参考。
-4. 需要参照完整形状时读同一例子的 [OCaml 输入](assets/expr.ml)、[Rust 输出](assets/expr.rs)、[C++ 输出](assets/expr.hpp)。例子假设无共享、无外部 ABI 的只读表达式树；依据实际参数调整。
-5. 更新已有输出时，从旧构造器对照新增、删除和重命名项，更新相应的字段、分派与消费点。保持已发布编号和调用约定，说明有意改变的语义。按请求编辑代码或返回代码块，沿用仓库的文件组织。
+1. Record each type's name, parameters, constructors, payload arity and grouping, field names and order, and mutability. Use `.mli` visibility and call sites to identify observable sharing, physical equality, encoding, and ABI requirements. For mutually recursive types, find every cycle in the by-value layout, accounting for indirection already supplied by containers or pointers.
+2. Choose representations from the [mapping guide](references/mapping.md) for the requested languages. In Rust, prefer enums, structs, and exhaustive matches. In C++, represent closed sums with payloads using an RTTI base, a kind tag, and concrete classes. Use lightweight value types for plain records and payload-free enums.
+3. For C++, consult the [object model and C++26 guide](references/cpp.md). When targeting kuai, check the current branch and reuse its infrastructure. In a standalone project, take only the parts the data model needs.
+4. Compare the [OCaml input](assets/expr.ml), [Rust output](assets/expr.rs), and [C++ output](assets/expr.hpp) for a complete example. They model a read-only expression tree with unique ownership and no external ABI. Adapt the representation to the actual options.
+5. When updating generated code, identify added, removed, and renamed constructors. Update fields, dispatch, and callers together. Preserve published tag values and calling conventions, and explain intentional semantic changes. Edit files or return code blocks as requested, following the target project's layout.
 
-## 验收
+## Check the result
 
-- 每个可构造值在各目标有对应形状。抽查一个完整的“构造 → 向上转型/借用 → 分派 → 读字段”调用；多字段构造器保持 arity，互递归类型可定义、可析构。
-- Rust 穷尽匹配时列出所有分支。C++ 检查正例、错误 kind、const 返回类型、跨域误用、销毁和新增分支的可见性；有边界解码才检查未知外部 tag。已知共享/身份约束用两个父节点引用同一对象的样例检查。
-- 尽量用项目入口编译。独立示例可用 `rustc --edition=2021 --crate-type lib` 和包含头文件的 C++ 小程序。验证物放在临时目录。区分已运行的配置与只做语义核对的部分。
-- 回复给出代码或改动位置，用一两句交代影响布局、所有权、ABI 或命名的本次决定。小声明可以直接给等价类型。维护本 skill 时，改默认值只改参数表数据，改语义规则同时更新相应例子。
+- Trace one value from construction through an upcast or borrow, dispatch, and field access. Check that each source constructor is representable, payload arity survives, and mutually recursive definitions can be constructed and destroyed.
+- Cover every Rust match arm. For C++, check a successful query, a wrong kind, const propagation, cross-domain misuse, destruction, and how a new branch surfaces in existing visitors. Exercise unknown raw tags when a decoder exists. If shared identity matters, test two parents that refer to the same node.
+- Compile through the project's normal entry point when possible. For a standalone example, use `rustc --edition=2021 --crate-type lib` on the Rust file and a small translation unit that includes the C++ header. Keep build products in a temporary directory. Identify which configurations you ran and which you reviewed.
+- Return the code or its location. Briefly explain choices that affect layout, ownership, ABI, or naming. A small declaration may need only the equivalent target types. To maintain this skill, edit the defaults file for preference changes and update the corresponding examples when a semantic rule changes.
