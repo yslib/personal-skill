@@ -1,6 +1,6 @@
 ---
 name: map-ocaml-types
-description: Map OCaml type declarations, records, variants, and mutually recursive groups to Rust or C++, update existing mappings, and maintain Lucida's representation preferences. Use for ASTs, IRs, runtime objects, and data models that need Rust enums or C++ kind tables, tag-based RTTI, and checked downcasts with configurable naming and ownership.
+description: Map OCaml type declarations, records, variants, and mutually recursive groups to Rust or C++, update existing mappings, and maintain Lucida's representation preferences. Use for ASTs, IRs, runtime objects, and data models that need Rust enums or C++ variants, kind tables, tag-based RTTI, and checked downcasts with configurable naming and ownership.
 ---
 
 # Map OCaml types to Rust and C++
@@ -17,8 +17,8 @@ Use the OCaml declarations to determine which values exist and how they behave. 
 ## Generate the mapping
 
 1. Record each type's name, parameters, constructors, payload arity and grouping, field names and order, and mutability. Use `.mli` visibility and call sites to identify observable sharing, physical equality, encoding, and ABI requirements. For mutually recursive types, find every cycle in the by-value layout, accounting for indirection already supplied by containers or pointers.
-2. Choose representations from the [mapping guide](references/mapping.md) for the requested languages. In Rust, prefer enums, structs, and exhaustive matches. In C++, represent closed sums with payloads using an RTTI base, a kind tag, and concrete classes. Use lightweight value types for plain records and payload-free enums.
-3. For C++, consult the [object model and C++26 guide](references/cpp.md). When targeting kuai, check the current branch and reuse its infrastructure. In a standalone project, take only the parts the data model needs.
+2. Choose representations from the [mapping guide](references/mapping.md) for the requested languages. In Rust, prefer enums, structs, and exhaustive matches. In C++, use `std::variant` for a simple closed value sum and an RTTI base, one kind tag, and concrete classes for an engineered object family. Resolve `cpp.sum` from how callers use the type. Use lightweight value types for plain records and payload-free enums.
+3. For maintained C++ targets, apply the shared [C++ engineering preferences](https://github.com/yslib/personal-skill/blob/main/skills/cpp-engineering-style/SKILL.md). Resolve the installed skill by name, `cpp-engineering-style`, or read its sibling directory in a checkout. Pass along ownership, toolchain, naming, and question settings already resolved here. Read its sum-type and flat-dispatch rules if combinations of runtime tags select typed operations. For a small standalone mapping, the local rules suffice. For C++, consult the [object model and C++26 guide](references/cpp.md). When targeting kuai, check the current branch and reuse its infrastructure. In a standalone project, take only the parts the data model needs.
 4. Compare the [OCaml input](assets/expr.ml), [Rust output](assets/expr.rs), and [C++ output](assets/expr.hpp) for a complete example. They model a read-only expression tree with unique ownership and no external ABI. Adapt the representation to the actual options.
 5. When updating generated code, identify added, removed, and renamed constructors. Update fields, dispatch, and callers together. Preserve published tag values and calling conventions, and explain intentional semantic changes. Edit files or return code blocks as requested, following the target project's layout.
 

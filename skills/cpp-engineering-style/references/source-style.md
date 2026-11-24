@@ -1,0 +1,22 @@
+# Items 2 and 3. Organize the public contract and its implementation
+
+## Item 2. Arrange files by the questions their reader needs to answer
+
+- **Public C header.** Group entry points by resource or operation family. In kuai, `ku_runtime.h` covers runtime capabilities, `ku_object.h` covers object lifetime, and `ku_completion.h` defines completion semantics. Include the C types each header uses, use guards and a C++ linkage guard, and put the contract next to the declaration. Document ownership on success, output state on failure, and any device, thread, or lifetime restriction. A shared types header is a good home for handles and fixed-width codes.
+- **Public C++ header.** Keep the type's purpose, constructors or factory, lifetime operations, and related observers together. Make ownership visible in types. Put required complete types and public template definitions in the header. Use forward declarations for pointer or reference members when the declaration suffices. Keep overload families adjacent and preserve const in borrowing accessors. kuai examples include `KuSlice.h` and the backend-neutral `KuDevice.h`.
+- **Implementation.** For an ordinary class, pair `Device.h` with `Device.cpp`. Include the declaring header directly and compile headers on their own. Move SDK includes, setup/teardown, and helpers used by one translation unit into `.cpp` or `.cu`. A private `*Access.h` is useful when a named peer legitimately needs privileged operations. Use a small private API to document that dependency.
+- **Dependency and ABI control.** Use an out-of-line implementation or PImpl for a long-lived facade whose private layout or SDK dependencies change independently. Define the owning destructor where the implementation type is complete. Account for its allocation, pointer indirection, and locality. A small value, a hot node, and a public template usually favor a direct representation.
+- **Mechanical conventions.** Follow the module's formatter and identifier conventions. kuai uses `KuDevice`, `getKind()`, `m_value`, and prefixed `ku_*` C symbols. In a new project ask about the namespace and prefix before publishing names. Use `[[nodiscard]]` for statuses/owning results, `explicit` for single-argument conversions, and `noexcept` where the implementation meets that promise. Keep X-macros for closed lists that drive multiple mechanical outputs. Keep behavior and lifetime reasoning in ordinary functions.
+
+## Item 3. Select the newest language mode supported by the whole target
+
+Prefer C++26 in a new unconstrained project. Inspect host compiler, standard library, CUDA or other device front end, minimum consumer compiler, and ABI promises separately. A backend translation unit may need a lower standard than the host. Require the chosen level in the target. Use a public compile feature if installed headers require that level and a private requirement for implementation-only features. For a C-only exported surface, keep C++ implementation requirements private.
+
+| Need | Preference | Check before emitting |
+| --- | --- | --- |
+| Typed fallible factory | Use C++23 `std::expected<T, E>` or `std::expected<void, E>`. | Probe `<expected>` and the operations used. Monadic operations have their own library support threshold. |
+| cv-correct borrowing accessor | Use C++23 explicit object parameters if they improve the overload set. | Preserve lvalue lifetime restrictions. Ordinary const/mutable overloads work on older front ends. |
+| Internal invariant | Use C++26 contracts if the project adopts their evaluation policy, otherwise its existing assertion facility. | Keep predicates side-effect free. Check required public errors on the release path. |
+| Compile-time metadata | Use C++26 reflection to derive facts such as enumerator names where the exact facilities compile. | Keep wire numbers, human-facing strings, and type-to-backend bindings in an explicit table when they carry domain policy. |
+
+Read feature-test macros and compile a small, relevant expression with the actual target flags and library. CMake language-level selection alone does not prove support for a feature. Keep the fallback's public semantics and ABI consistent. Use a tested target-private no-exceptions configuration for the low-level runtime. For GCC/Clang host C++ this typically includes `-fno-exceptions`. Check MSVC and CUDA configurations independently, including device and host compiler options. Ensure every included implementation header compiles under those settings.

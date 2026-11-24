@@ -14,7 +14,11 @@ These source links refer to `yslib/kuai` at `2b883e6`. Check the corresponding f
 | [ku_object.h](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/src/kuai_c/include/kuai/kuai_c/ku_object.h), [ku_object.rs](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/crates/kurt/src/ku_object.rs) | Public C kind numbers have a separate protocol. For example, `KU_OBJECT_TENSOR` is 2 and the internal `kTensor` is 1001. The safe Rust wrapper sits above the sys layer and explicitly matches raw external tags. Generate an adapter when the user requests cross-language interoperation. |
 | [KurtBuildOptions.cmake](https://github.com/yslib/kuai/blob/2b883e6295a9d04e672749ba0df1fd16836a6fb6/kurt-cpp/cmake/KurtBuildOptions.cmake) | This revision sets C++23 for MSVC and C++26 for the other branch. Check the target flags and probe individual features. |
 
-## Generate a standalone closed ADT
+## Choose the representation of a closed ADT
+
+For a small local value sum, define a named payload per alternative and use `std::variant` with an exhaustive visitor. For a maintained object family with shared identity, private payloads, or typed queries across modules, use the tagged hierarchy below. The expression-tree asset illustrates that profile. For multiple runtime type codes selecting one specialized operation, follow Item 8 in [C++ engineering style](https://github.com/yslib/personal-skill/blob/main/skills/cpp-engineering-style/references/sums-and-dispatch.md).
+
+### Generate a tagged object family
 
 1. Define a domain-specific `enum class ExprKind` with one entry per constructor. Store the discriminator once in `Rtti<ExprKind>`. Let the root `Expr` and its leaves use the inherited tag. Use value representations for plain records, payload-free enums, and scalar wrappers. Add a fixed underlying width, explicit numbers, and boundary validation when an inter-module protocol needs stable numbers.
 2. Generate mechanical kind declarations, type-to-kind registrations, names, or visitor arms from one X-macro list. Write fields, invariants, and domain behavior in ordinary C++. Give macros a domain prefix and `#undef` them after use. Check which callers must change when a list entry is added. Dispatch with an exhaustive switch. Reject unknown external integers at decode time and use the project's failure path for an unreachable internal tail.

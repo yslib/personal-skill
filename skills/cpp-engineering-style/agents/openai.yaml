@@ -1,0 +1,14 @@
+interface:
+  display_name: C++ Engineering Style
+  short_description: Apply project-specific C++ runtime and ABI conventions
+  default_prompt: Use $cpp-engineering-style to choose the module layout, error model,
+    ownership, and backend boundary for this C++ project.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

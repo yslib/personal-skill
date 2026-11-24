@@ -7,6 +7,7 @@ naming:
   overrides: {}
 ownership: auto
 cpp:
+  sum: auto
   kind: auto
   standard: project
   contracts: project
