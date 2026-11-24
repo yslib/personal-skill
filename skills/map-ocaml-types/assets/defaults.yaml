@@ -1,0 +1,13 @@
+# 个人默认值（草稿）。只在用户明确要求保存偏好时改动。
+targets: [rust, cpp]
+questions: auto
+naming:
+  cpp: project
+  rust: project
+  overrides: {}
+ownership: auto
+cpp:
+  kind: auto
+  standard: project
+  contracts: project
+  reflection: project

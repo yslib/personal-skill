@@ -1,0 +1,14 @@
+interface:
+  display_name: OCaml 类型到 Rust / C++
+  short_description: 按个人工程约定，将 OCaml 类型原型映射为 Rust 和 C++ 表示
+  default_prompt: 用 $map-ocaml-types 把这组 OCaml 类型生成为 Rust 和 C++，套用项目的所有权和 tag-based
+    RTTI 约定。
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
