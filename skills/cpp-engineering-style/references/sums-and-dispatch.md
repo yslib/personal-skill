@@ -6,6 +6,7 @@
 | --- | --- | --- |
 | Alternatives carry no payload | `enum class` | Natural switch, no allocation; choose stable external numbers only for a protocol. |
 | A small closed set of values with local consumers | `std::variant<A, B, ...>` and a typed visitor | Value semantics and local exhaustive handling. Account for the largest alternative, alignment, move/copy requirements, and a rebuild when alternatives change. Use distinct wrapper types when two alternatives carry the same primitive but have different meanings. |
+| Operations in a lowered compiler IR or opcode plan | Dense ID-keyed records with a kind tag and typed access to operands and payloads | Keep entity identity independent of the concrete payload. See [IR storage](ir-storage.md). |
 | A maintained object family with identity, shared base behavior, arenas/handles, intermediate categories, or cross-module consumers | One domain-specific kind on a lightweight RTTI base, concrete payload classes, and a checked `as<T>()` | Stable object access without exposing a variant layout. Tag and dynamic type must agree. Define ownership separately. For a public ABI, expose opaque handles and an explicit tag protocol. |
 | Success or error | `std::expected<T, E>` at a C++ logic boundary, fixed-width status at a C ABI | Preserve success and failure semantics directly. |
 

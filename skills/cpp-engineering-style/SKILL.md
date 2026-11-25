@@ -1,11 +1,15 @@
 ---
 name: cpp-engineering-style
-description: Apply Lucida's engineering preferences when designing, generating, or reviewing a maintained C++ library, runtime, SDK, or multi-backend system. Covers CMake module organization, headers and translation units, language level, exception-free low-level code, C ABI design, backend dispatch, resource ownership, variant versus tagged object families, and flat static dispatch over combinations of type codes. Other skills may invoke this guide for the C++ portion of a larger task.
+description: Apply Lucida's C++ engineering preferences to libraries, runtimes, SDKs, and multi-backend systems. Use also for Rust-only compiler and DSL projects, C++/Rust IR demos, lowering passes, opcode plans, and ports between languages. Design flat HIR/MIR/LIR storage with typed IDs, IndexedMap, side tables, kind traits, and per-stage builders. Covers CMake, language features, exception-free code, C ABI, ownership, sum types, and static dispatch.
 ---
 
 # C++ engineering style
 
 Start with the unit of change. For a library that will have multiple maintainers, consumers, or backends, make the build, ownership, and error contracts visible at their boundaries. For a small demo, use the few files and features its question requires. A single-target example of an explicit result does not need a plugin SDK or a module helper.
+
+For compiler work, keep the AST recursive by default and give each requested lowered stage flat, ID-addressed storage, even in a small demo. Scale down the number of stages, kinds, and tables to fit the task. Read [Data-oriented IR and plans](references/ir-storage.md) before choosing the node representation. Use the same design for other pass-oriented graphs when their access patterns fit.
+
+For a Rust IR implementation, follow the [Rust storage and builder conventions](references/rust-ir-storage.md). Apply the shared stage boundaries and choose the Rust construction API there. Use the C++ toolchain and ABI guidance when the project includes those boundaries.
 
 ## Agree on the project choices
 
@@ -33,6 +37,7 @@ Ask only about decisions relevant to this task that the user or project has not 
 | 6. Make ownership transfers cheap and visible. | C clients or async operations keep a resource beyond a call. | [Backends and ownership](references/backends-and-ownership.md) |
 | 7. Choose sum types by lifetime and interface. | A simple closed value fits `std::variant`; an engineered object family needs a domain-specific kind and checked downcasts. | [Sum types and type dispatch](references/sums-and-dispatch.md) |
 | 8. Flatten composite type codes into static dispatch. | A batch kernel is specialized on several runtime type tags. | [Sum types and type dispatch](references/sums-and-dispatch.md), [working example](assets/TypeDispatch.hpp) |
+| 9. Design IR storage around the passes that read it. | A compiler stage, IR demo, bytecode plan, or a port needs traversable records and explicit relationships. | [Data-oriented IR and plans](references/ir-storage.md), [Rust implementation](references/rust-ir-storage.md) |
 
 For kuai-derived examples and differences between repository practice and these preferences, see the [source notes](references/kuai.md). Work in the user's language and maintain this skill in English.
 
