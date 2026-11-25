@@ -1,0 +1,14 @@
+interface:
+  display_name: Rust Engineering Style
+  short_description: Design data-oriented compiler IR and builders in Rust
+  default_prompt: Use $rust-engineering-style to design the storage and construction
+    API for this Rust compiler IR.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

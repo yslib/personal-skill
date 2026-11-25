@@ -1,8 +1,8 @@
 interface:
   display_name: C++ Engineering Style
-  short_description: Design C++ libraries and flat compiler IR in C++ or Rust
-  default_prompt: Use $cpp-engineering-style to design this project's storage and
-    interfaces for the target language.
+  short_description: Design C++ libraries, compiler IR, and runtime interfaces
+  default_prompt: Use $cpp-engineering-style to design the storage, ownership, and
+    interfaces for this C++ project.
   icon_small: assets/icon.svg
   icon_large: assets/icon.svg
 policy:

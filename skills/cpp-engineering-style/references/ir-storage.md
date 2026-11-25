@@ -70,7 +70,7 @@ Inside `emit<Op::Add>`, store the two value IDs inline if the pass reads them to
 - Give each implemented layer a builder that borrows its storage. Put ID allocation, payload and pool insertion, and related table updates behind its operations. A HIR builder might expose `build<ExprKind::Call>(...)`, a MIR builder `emit<Op::Add>(...)`, and a plan builder label binding and fixups. Maintain a current block only in stages that use one.
 - Lower from a read-only source view into the destination builder. Preserve sharing by mapping source IDs to destination IDs when semantics require it. Keep lowering policy in the lowering pass and storage invariants in the builder. Analyses can iterate typed IDs and obtain short-lived read views without a builder.
 - Trace one shared value through construction and consumption. For `s = add(a, b); t = mul(s, s)`, the multiply holds the same `ValueId` twice and the stage owns one definition of `s`. For the operations present, check ID domains, pool bounds, kind/payload pairing, and stage-specific invariants such as valid branch targets. Run the smallest normal lowering-to-consumer example.
-- Carry the layout and invariants across languages. In Rust, for example, use distinct ID newtypes, a typed vector wrapper, and an enum with exhaustive matching or typed builder methods. Select idiomatic dispatch and borrowing for the target language. Reuse this design for query plans and task DAGs when passes need the same identity, scan, and metadata patterns.
+- Carry the layout and invariants across languages. Select idiomatic dispatch and borrowing for the target language. Reuse this design for query plans and task DAGs when passes need the same identity, scan, and metadata patterns.
 
 ## Borrow small pieces from LLVM and MLIR
 
